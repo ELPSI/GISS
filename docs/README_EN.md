@@ -52,7 +52,7 @@ The resource pack download link is as follows:
 
 9.  Now you can see a newly created **shortcut** of game on your **computer desktop**, **double click** it and enjoy yourself!
 
-10. For other instructions, please read the article on **bilibili** website: https://www.bilibili.com/read/cv22707963 。
+10. For other instructions, please read the article on **bilibili** website: https://www.bilibili.com/read/cv22707963
 
 ## Notice
 1. In this tool, **Landserver** represents **[1]Sky-Island Server**, **Treeserver** represents **[2]World-Tree Server**, **Seaserver** represents **[3]International Server**.
