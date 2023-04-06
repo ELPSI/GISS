@@ -2,8 +2,8 @@
 CHCP 65001 > NUL
 :: File name:	GISS
 :: Author:		elpsy
-:: Version:		1.0.0
-:: Date:		20230405
+:: Version:		1.0.1
+:: Date:		20230406
 :: Description	Genshin Impact Server-Switching
 
 CD /D %~DP0 & TITLE GISS - Genshin Impact Server-Switching
@@ -16,20 +16,21 @@ SET /A treeServerStatus=0
 SET /A seaServerStatus=0
 
 SET "oldGamePath=0"
+SET "oldServerNum=0"
+SET "oldServerName=0"
 SET "oldDataPath=0"
 SET "oldDataType=0"
-SET "oldServerName=0"
 SET "oldGameName=0"
-SET "oldServerNum=0"
 
+SET "newServerNum=0"
+SET "newServerName=0"
 SET "newGamePath=0"
 SET "newDataPath=0"
 SET "newDataType=0"
-SET "newServerName=0"
 SET "newGameName=0"
-SET "newServerNum=0"
-SET "newPath=0"
 
+SET "originalServerNum=0"
+SET "originalServerName=0"
 SET "gameVersion=0"
 SET "oldShortcutName=0"
 SET "resourceName=0"
@@ -49,14 +50,16 @@ IF "%newDataType%"=="%oldDataType%" (
 )
 CALL :UPDATECFG
 CALL :CREATE_SHORTCUT
-ECHO;&ECHO Changed successfully.
+ECHO;&ECHO Server switched successfully.
 PAUSE>NUL & EXIT
 
 :RESET_CFG_VAR
 CLS&SET /P "gameVersion=Please input gameVersion(For example:3.5.0),end with inputting "Enter" key: "
+SET originalServerNum=%originalServerNum%
+SET originalServerName=%originalServerName%
 SET oldServerNum=0
-SET oldGamePath=0
 SET oldServerName=0
+SET oldGamePath=0
 SET oldDataType=0
 SET oldGameName=0
 SET successCount=0
@@ -109,65 +112,78 @@ CD /D %~DP0
 CALL :INFO
 SET /A legalFlag=0
 IF EXIST "%oldGamePath%\GenshinImpact.exe" (
-	SET "oldServerName=Seaserver"
-	SET "oldDataType=GenshinImpact_Data"
-	SET "oldGameName=GenshinImpact.exe"
-	SET /A oldServerNum=3
+	SET /A "oldServerNum=3"
 	SET /A legalFlag=1
 ) ELSE (
 	IF EXIST "%oldGamePath%\YuanShen.exe" (
 		IF %channel%==1 (
-			SET "oldServerName=Landserver"
-			SET "oldDataType=YuanShen_Data"
-			SET "oldGameName=YuanShen.exe"
-			SET /A oldServerNum=1
+			SET /A "oldServerNum=1"
 			SET /A legalFlag=1
-		) 
+		)
 		IF %channel%==14 (
-			SET "oldServerName=Treeserver"
-			SET "oldDataType=YuanShen_Data"
-			SET "oldGameName=YuanShen.exe"
-			SET /A oldServerNum=2
+			SET /A "oldServerNum=2"
 			SET /A legalFlag=1
 		)
 	)
 )
+rem IF NOT "%~1"=="" (
+rem 	SET /A "oldServerNum=%~1"
+rem 	SET /A legalFlag=1
+rem )
 IF NOT !legalFlag!==1 (
 	CALL :FAILED_BREAK
 )
-
+IF %oldServerNum%==1 (
+	SET "oldServerName=Land"
+	SET "oldDataType=YuanShen_Data"
+	SET "oldGameName=YuanShen.exe"
+) 
+IF %oldServerNum%==2 (
+	SET "oldServerName=Tree"
+	SET "oldDataType=YuanShen_Data"
+	SET "oldGameName=YuanShen.exe"
+)
+IF %oldServerNum%==3 (
+	SET "oldServerName=Sea"
+	SET "oldDataType=GenshinImpact_Data"
+	SET "oldGameName=GenshinImpact.exe"
+)
 SET "oldShortcutName=%oldServerName%"
 SET "oldDataPath=%oldGamePath%\%oldDataType%"
 IF NOT EXIST "%oldDataPath%" (
 	CALL :FAILED_BREAK
+)
+IF %successCount%==0 (
+	SET "originalServerNum=%oldServerNum%"
+	SET "originalServerName=%oldServerName%"
 )
 GOTO :EOF
 
 :CHOOSE_SERVER
 SET /A legalFlag=0
 CALL :INFO
-ECHO;&ECHO Choose new server: [1]Landserver [2]Treeserver [3]Seaserver
+ECHO;&ECHO Choose new server: [1]Land [2]Tree [3]Sea
 ECHO;&SET /P "newServerNum=Input number: "
 IF %newServerNum%==%oldServerNum% (
 	ECHO %oldServerName% exists.
 	GOTO CHOOSE_SERVER
 )
 IF %newServerNum%==1 (
-	SET "newServerName=Landserver"
+	SET "newServerName=Land"
 	SET "resourceName=CNRes_"
 	SET "newDataType=YuanShen_Data"
 	SET "newGameName=YuanShen.exe"
 	SET /A legalFlag=1
 )
 IF %newServerNum%==2 (
-	SET "newServerName=Treeserver"
+	SET "newServerName=Tree"
 	SET "resourceName=CNRes_"
 	SET "newDataType=YuanShen_Data"
 	SET "newGameName=YuanShen.exe"
 	SET /A legalFlag=1
 )
 IF %newServerNum%==3 (
-	SET "newServerName=Seaserver"
+	SET "newServerName=Sea"
 	SET "resourceName=SeaRes_"
 	SET "newDataType=GenshinImpact_Data"
 	SET "newGameName=GenshinImpact.exe"
@@ -183,12 +199,14 @@ GOTO :EOF
 :INFO
 CLS
 ECHO Game path: %oldGamePath%
-ECHO;&ECHO Old server: [%oldServerNum%]%oldServerName%
-ECHO %newServerNum%|FINDSTR "^[1-3][0-9]*$" > NUL
+IF NOT %originalServerName%==0 (
+	ECHO;&ECHO Original server: [%originalServerNum%]%originalServerName%
+)
+ECHO;&ECHO Current server: [%oldServerNum%]%oldServerName%
 IF NOT %newServerName%==0 (
 	ECHO;&ECHO New server: [%newServerNum%]%newServerName%
 )
-rem ECHO %newServerNum%|FINDSTR "^[1-3][0-9]*$" > NUL
+rem ECHO %newServerNum%|FINDSTR "^[1-3]$" > NUL
 rem IF NOT ERRORLEVEL 1 (
 rem 	ECHO;&ECHO New server: [%newServerNum%]%newServerName%.
 rem )
@@ -215,6 +233,7 @@ IF EXIST "%resourceName%V%gameVersion%" (
 		GOTO CN_SEA
 	)
 	"%resourceName%V%gameVersion%.exe"
+	GOTO CN_SEA
 )
 	IF EXIST "%oldGamePath%\%oldGameName%" (
 		DEL /Q "%oldGamePath%\%oldGameName%"
@@ -230,6 +249,9 @@ CALL :INFO
 IF %newServerNum%==2 (
 	IF EXIST "PCGameSDK.dll" (
 		COPY /Y "PCGameSDK.dll" "%newDataPath%\Plugins\PCGameSDK.dll">NUL 2>NUL
+		IF ERRORLEVEL 1 (
+			CALL FAILED_BREAK
+		)
 	) ELSE (
 		ECHO;&ECHO Please download PCGameSDK.dll.
 		ECHO;&PAUSE
@@ -249,21 +271,21 @@ GOTO :EOF
 
 :UPDATECFG
 CALL :INFO
-IF %newServerName%==Landserver (
+IF %newServerName%==Land (
 	SET /A "landServerStatus=1"
 	SET /A "treeServerStatus=0"
 	SET /A "seaServerStatus=0"
 	SET "channel=1"
 	SET "cps=mihoyo"
 ) ELSE (
-	IF %newServerName%==Treeserver (
+	IF %newServerName%==Tree (
 		SET /A "landServerStatus=0"
 		SET /A "treeServerStatus=1"
 		SET /A "seaServerStatus=0"
 		SET "channel=14"
 		SET "cps=bilibili"
 	) ELSE (
-		IF %newServerName%==Seaserver (
+		IF %newServerName%==Sea (
 			SET /A "landServerStatus=0"
 			SET /A "treeServerStatus=0"
 			SET /A "seaServerStatus=1"
@@ -285,13 +307,14 @@ IF NOT EXIST "cfg" (
 SET /A "successCount+=1"
 (
 	ECHO gameVersion=%gameVersion%
-	ECHO oldServerNum=%newServerNum%
 	ECHO oldGamePath=%newGamePath%
+	ECHO originalServerNum=%originalServerNum%
+	ECHO originalServerName=%originalServerName%
+	ECHO oldServerNum=%newServerNum%
 	ECHO oldServerName=%newServerName%
 	ECHO oldDataType=%newDataType%
 	ECHO oldGameName=%newGameName%
 	ECHO successCount=%successCount%
-
 )>cfg\cfg_GICS.ini
 GOTO :EOF
 
@@ -302,10 +325,10 @@ FOR /F "SKIP=2 TOKENS=1,2 DELIMS=:" %%i IN ('REG QUERY "HKCU\Software\Microsoft\
 	SET "value2=%%j"
 	SET "desktopPath=!value1:~-1!:!value2!"
 )
-IF EXIST "!desktopPath!\%oldShortcutName%.lnk" (
-	DEL /Q "!desktopPath!\%oldShortcutName%.lnk"
+IF EXIST "!desktopPath!\[!oldServerNum!]%oldShortcutName%.lnk" (
+	DEL /Q "!desktopPath!\[!oldServerNum!]%oldShortcutName%.lnk"
 )
-mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\%shortcutName%.lnk""):b.TargetPath=""%newGamePath%\%newGameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
+mshta VBScript:Execute("Set a=CreateObject(""WScript.Shell""):Set b=a.CreateShortcut(a.SpecialFolders(""Desktop"") & ""\[!newServerNum!]%shortcutName%.lnk""):b.TargetPath=""%newGamePath%\%newGameName%"":b.WorkingDirectory=""%newGamePath%"":b.Save:close")
 GOTO :EOF
 
 :FAILED_BREAK
